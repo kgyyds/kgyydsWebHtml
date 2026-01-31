@@ -1,13 +1,59 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from "vue";
 
-const now = ref(new Date());
-let timer = null;
+const open = ref(false);
+const active = ref("Home");
 
-onMounted(() => {
-  timer = setInterval(() => (now.value = new Date()), 1000);
+const nav = [
+  { key: "Home", icon: "⌂", desc: "主页面板" },
+  { key: "Tools", icon: "⚙", desc: "小工具箱" },
+  { key: "Logs", icon: "≡", desc: "日志与状态" },
+  { key: "About", icon: "i", desc: "关于本站" },
+];
+
+const toggle = () => (open.value = !open.value);
+const close = () => (open.value = false);
+const go = (k) => {
+  active.value = k;
+  close();
+};
+
+// ESC 关闭（桌面也舒服）
+const onKey = (e) => {
+  if (e.key === "Escape") close();
+};
+
+onMounted(() => window.addEventListener("keydown", onKey));
+onUnmounted(() => window.removeEventListener("keydown", onKey));
+
+const title = computed(() => {
+  const m = nav.find((x) => x.key === active.value);
+  return m ? m.key : "Home";
 });
-onUnmounted(() => timer && clearInterval(timer));
+
+// 小小“灵动”欢迎语
+const tip = computed(() => {
+  switch (active.value) {
+    case "Home":
+      return "Welcome back. System ready ✅";
+    case "Tools":
+      return "Quick utilities. Fast & clean ⚡";
+    case "Logs":
+      return "Telemetry stream (mock). No panic 😎";
+    case "About":
+      return "Built with Vue3 + Vite + Pages 🖤";
+    default:
+      return "Ready.";
+  }
+});
+
+// 假装的实时状态
+const now = ref(new Date());
+let t = null;
+onMounted(() => {
+  t = setInterval(() => (now.value = new Date()), 1000);
+});
+onUnmounted(() => t && clearInterval(t));
 
 const timeText = computed(() => {
   const d = now.value;
@@ -17,448 +63,454 @@ const timeText = computed(() => {
   return `${hh}:${mm}:${ss}`;
 });
 
-// “终端”打字机效果
-const fullLines = [
-  "[BOOT] Initializing secure shell...",
-  "[OK]  Kernel hooks loaded.",
-  "[OK]  Network: ONLINE",
-  "[OK]  TLS: ENABLED",
-  "[OK]  Ready. Type a command.",
-];
-const lines = ref([]);
-const typingDone = ref(false);
+// Tools demo state
+const toolText = ref("");
+const toolOut = ref("");
 
-const typeAll = async () => {
-  lines.value = [];
-  typingDone.value = false;
-  for (const line of fullLines) {
-    let s = "";
-    for (const ch of line) {
-      s += ch;
-      const last = lines.value.length - 1;
-      if (last >= 0 && lines.value[last].startsWith("[typing]")) {
-        lines.value[last] = `[typing] ${s}`;
-      } else {
-        lines.value.push(`[typing] ${s}`);
-      }
-      await new Promise((r) => setTimeout(r, 12 + Math.random() * 28));
-    }
-    // 固化这一行
-    lines.value[lines.value.length - 1] = line;
-    await new Promise((r) => setTimeout(r, 140));
-  }
-  typingDone.value = true;
+const doUpper = () => (toolOut.value = toolText.value.toUpperCase());
+const doLower = () => (toolOut.value = toolText.value.toLowerCase());
+const doClear = () => {
+  toolText.value = "";
+  toolOut.value = "";
 };
-
-onMounted(() => {
-  typeAll();
-});
-
-// 交互：输入命令（只是 UI 演示，不做真实执行）
-const cmd = ref("");
-const history = ref([]);
-const run = () => {
-  const input = cmd.value.trim();
-  if (!input) return;
-
-  history.value.push({ t: timeText.value, in: input, out: fakeRun(input) });
-  cmd.value = "";
-  // 滚动到底部（移动端更舒服）
-  requestAnimationFrame(() => {
-    const el = document.querySelector(".terminal");
-    el && el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  });
-};
-
-const quick = (c) => {
-  cmd.value = c;
-  run();
-};
-
-function fakeRun(input) {
-  const low = input.toLowerCase();
-  if (low === "help") {
-    return [
-      "commands:",
-      "  status   - show system status",
-      "  ping     - simulate ping",
-      "  clear    - clear history",
-      "  about    - show info",
-      "  theme    - toggle neon glow (demo)",
-    ];
-  }
-  if (low === "status") {
-    return [
-      "uptime: 00:" + String(Math.floor(Math.random() * 59)).padStart(2, "0") + ":" + String(Math.floor(Math.random() * 59)).padStart(2, "0"),
-      "cpu: " + (18 + Math.floor(Math.random() * 36)) + "%",
-      "mem: " + (33 + Math.floor(Math.random() * 45)) + "%",
-      "net: ONLINE",
-      "firewall: ACTIVE",
-    ];
-  }
-  if (low === "ping") {
-    return [
-      "PING 1.1.1.1 (simulated)",
-      "64 bytes from 1.1.1.1: icmp_seq=1 ttl=57 time=12.4 ms",
-      "64 bytes from 1.1.1.1: icmp_seq=2 ttl=57 time=10.9 ms",
-      "64 bytes from 1.1.1.1: icmp_seq=3 ttl=57 time=11.6 ms",
-      "--- 1.1.1.1 ping statistics ---",
-      "3 packets transmitted, 3 received, 0% packet loss",
-    ];
-  }
-  if (low === "about") {
-    return [
-      "kgyydsWebHtml // mobile terminal UI",
-      "Vue3 + Vite + Cloudflare Pages",
-      "Tip: bind your domain when NS is ready 😉",
-    ];
-  }
-  if (low === "clear") {
-    history.value = [];
-    return ["cleared."];
-  }
-  if (low === "theme") {
-    glow.value = !glow.value;
-    return [glow.value ? "neon glow: ON" : "neon glow: OFF"];
-  }
-  return [`unknown command: "${input}"`, `type "help" for options.`];
-}
-
-// 霓虹开关（演示）
-const glow = ref(true);
 </script>
 
 <template>
-  <div class="bg" :class="{ glow }">
+  <div class="app" :class="{ 'menu-open': open }">
+    <!-- 顶栏 -->
     <header class="top">
-      <div class="brand">
-        <span class="dot"></span>
-        <span class="name">kgyyds://console</span>
+      <button class="burger" @click="toggle" aria-label="toggle menu">
+        <span class="b"></span>
+        <span class="b"></span>
+        <span class="b"></span>
+      </button>
+
+      <div class="topTitle">
+        <div class="t1">kgyyds://panel</div>
+        <div class="t2">{{ title }} · <span class="muted">{{ timeText }}</span></div>
       </div>
-      <div class="right">
-        <span class="chip">5G</span>
-        <span class="chip">VPN</span>
-        <span class="time">{{ timeText }}</span>
-      </div>
+
+      <div class="badge">ONLINE</div>
     </header>
 
-    <main class="wrap">
-      <section class="card">
-        <div class="title">
-          <span class="k">STATUS</span>
-          <button class="mini" @click="typeAll" title="reboot">
-            REBOOT
-          </button>
-        </div>
+    <!-- 遮罩：点一下收回 -->
+    <div v-show="open" class="overlay" @click="close"></div>
 
-        <div class="terminal" aria-label="terminal">
-          <div class="line" v-for="(l, i) in lines" :key="i">
-            <span class="prompt">$</span>
-            <span class="text" :class="{ typing: l.startsWith('[typing]') }">
-              {{ l.replace('[typing] ', '') }}
-            </span>
-            <span v-if="i === lines.length - 1 && !typingDone" class="cursor">█</span>
+    <!-- 侧边栏 -->
+    <aside class="drawer" role="navigation" aria-label="sidebar">
+      <div class="drawerHead">
+        <div class="brand">
+          <span class="dot"></span>
+          <div>
+            <div class="brandName">kgyyds</div>
+            <div class="brandSub">mobile sidebar</div>
           </div>
+        </div>
+        <button class="x" @click="close" aria-label="close">×</button>
+      </div>
 
-          <div v-if="history.length" class="sep"></div>
-
-          <div v-for="(h, i) in history" :key="'h' + i" class="block">
-            <div class="line">
-              <span class="muted">[{{ h.t }}]</span>
-              <span class="prompt">$</span>
-              <span class="text">{{ h.in }}</span>
-            </div>
-            <div class="out">
-              <div v-for="(o, j) in h.out" :key="i + '-' + j" class="oline">
-                <span class="muted">></span>
-                <span class="text">{{ o }}</span>
-              </div>
+      <div class="nav">
+        <button
+          v-for="m in nav"
+          :key="m.key"
+          class="navItem"
+          :class="{ active: m.key === active }"
+          @click="go(m.key)"
+        >
+          <div class="left">
+            <div class="ico">{{ m.icon }}</div>
+            <div class="txt">
+              <div class="name">{{ m.key }}</div>
+              <div class="desc">{{ m.desc }}</div>
             </div>
           </div>
-        </div>
+          <div class="chev">›</div>
+        </button>
+      </div>
 
-        <div class="inputRow">
-          <div class="inWrap">
-            <span class="prompt">$</span>
-            <input
-              v-model="cmd"
-              class="input"
-              placeholder='type "help" ...'
-              autocomplete="off"
-              autocapitalize="off"
-              spellcheck="false"
-              @keydown.enter.prevent="run"
-            />
-          </div>
-          <button class="btn" @click="run">RUN</button>
-        </div>
+      <div class="drawerFoot">
+        <div class="small muted">Tip: 点击遮罩 / ESC 都可收起</div>
+        <div class="small muted">Deploy: Cloudflare Pages</div>
+      </div>
+    </aside>
 
-        <div class="quick">
-          <button class="q" @click="quick('help')">help</button>
-          <button class="q" @click="quick('status')">status</button>
-          <button class="q" @click="quick('ping')">ping</button>
-          <button class="q" @click="quick('about')">about</button>
-          <button class="q" @click="quick('theme')">theme</button>
-          <button class="q danger" @click="quick('clear')">clear</button>
+    <!-- 主内容 -->
+    <main class="main">
+      <section class="hero">
+        <div class="heroTop">
+          <div class="pill">SECURE UI</div>
+          <div class="pill muted">Vue3</div>
+          <div class="pill muted">Mobile-first</div>
         </div>
+        <h1 class="h1">{{ title }}</h1>
+        <p class="p">{{ tip }}</p>
       </section>
 
-      <footer class="foot">
-        <span class="muted">©</span>
-        <span class="muted">kgyyds</span>
-        <span class="muted">|</span>
-        <span class="muted">deploy: Cloudflare Pages</span>
+      <section class="grid">
+        <!-- Home -->
+        <template v-if="active === 'Home'">
+          <div class="card">
+            <div class="cardTitle">Quick Actions</div>
+            <div class="row">
+              <button class="btn" @click="go('Tools')">Open Tools</button>
+              <button class="btn ghost" @click="go('Logs')">View Logs</button>
+            </div>
+            <div class="hint muted">左上角按钮可随时呼出侧边栏。</div>
+          </div>
+
+          <div class="card">
+            <div class="cardTitle">System</div>
+            <div class="kv">
+              <div class="k">Status</div><div class="v ok">ONLINE</div>
+              <div class="k">Latency</div><div class="v">{{ 9 + Math.floor(Math.random()*12) }} ms</div>
+              <div class="k">CPU</div><div class="v">{{ 22 + Math.floor(Math.random()*38) }}%</div>
+              <div class="k">Memory</div><div class="v">{{ 35 + Math.floor(Math.random()*40) }}%</div>
+            </div>
+          </div>
+        </template>
+
+        <!-- Tools -->
+        <template v-else-if="active === 'Tools'">
+          <div class="card">
+            <div class="cardTitle">Mini Tools</div>
+            <div class="tool">
+              <label class="lab">输入文本</label>
+              <textarea class="ta" placeholder="随便输点…" v-model="toolText"></textarea>
+              <div class="row">
+                <button class="btn" @click="doUpper">UPPER</button>
+                <button class="btn ghost" @click="doLower">lower</button>
+                <button class="btn ghost" @click="doClear">clear</button>
+              </div>
+              <label class="lab">输出</label>
+              <div class="out">{{ toolOut || "..." }}</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="cardTitle">Shortcuts</div>
+            <div class="chips">
+              <span class="chip">Base64（可加）</span>
+              <span class="chip">Hash（可加）</span>
+              <span class="chip">AES（可加）</span>
+            </div>
+            <div class="hint muted">你想加哪个工具，我就帮你补功能。</div>
+          </div>
+        </template>
+
+        <!-- Logs -->
+        <template v-else-if="active === 'Logs'">
+          <div class="card">
+            <div class="cardTitle">Logs</div>
+            <div class="log">
+              <div class="ln"><span class="tag">[OK]</span> Boot complete</div>
+              <div class="ln"><span class="tag">[OK]</span> Network online</div>
+              <div class="ln"><span class="tag">[OK]</span> Cache warmed</div>
+              <div class="ln"><span class="tag warn">[!]</span> No domain bound (NS pending)</div>
+              <div class="ln"><span class="tag">[OK]</span> Ready</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="cardTitle">Telemetry</div>
+            <div class="kv">
+              <div class="k">Time</div><div class="v">{{ timeText }}</div>
+              <div class="k">Conn</div><div class="v ok">stable</div>
+              <div class="k">Build</div><div class="v">vite</div>
+              <div class="k">Edge</div><div class="v">global</div>
+            </div>
+          </div>
+        </template>
+
+        <!-- About -->
+        <template v-else>
+          <div class="card">
+            <div class="cardTitle">About</div>
+            <div class="about">
+              <p>这是一个侧边栏布局模板：移动端优先，动效轻快。</p>
+              <p>你可以把它扩成：工具站 / 文档站 / 控制面板 / 个人主页。</p>
+              <p class="muted">需要我加路由（/tools /logs）也可以，或者接 Workers 做 API。</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="cardTitle">Next</div>
+            <div class="chips">
+              <span class="chip">vue-router</span>
+              <span class="chip">Naive UI</span>
+              <span class="chip">Workers API</span>
+            </div>
+          </div>
+        </template>
+      </section>
+
+      <footer class="foot muted">
+        © kgyyds · left sidebar demo
       </footer>
     </main>
   </div>
 </template>
 
 <style scoped>
-/* ====== 全局布局（移动端优先） ====== */
-.bg {
+.app {
   min-height: 100svh;
   background:
-    radial-gradient(1200px 600px at 20% -10%, rgba(34, 197, 94, 0.20), transparent 55%),
-    radial-gradient(900px 500px at 110% 10%, rgba(16, 185, 129, 0.14), transparent 60%),
+    radial-gradient(1000px 560px at 20% -10%, rgba(34,197,94,.18), transparent 55%),
+    radial-gradient(900px 520px at 110% 10%, rgba(16,185,129,.12), transparent 60%),
     linear-gradient(180deg, #05070c 0%, #020409 60%, #01030a 100%);
-  color: #caffd8;
+  color: #d6ffe2;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  display: flex;
-  flex-direction: column;
+  overflow-x: hidden;
 }
 
 .top {
   position: sticky;
   top: 0;
-  z-index: 20;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 14px 10px;
-  backdrop-filter: blur(10px);
-  background: rgba(2, 6, 23, 0.55);
-  border-bottom: 1px solid rgba(34, 197, 94, 0.18);
-}
-
-.brand {
-  display: flex;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
   align-items: center;
   gap: 10px;
-}
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: #22c55e;
-  box-shadow: 0 0 18px rgba(34, 197, 94, 0.6);
-}
-.name {
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  color: #b7ffcd;
-  opacity: 0.95;
+  padding: 12px 12px;
+  backdrop-filter: blur(10px);
+  background: rgba(2,6,23,.55);
+  border-bottom: 1px solid rgba(34,197,94,.16);
 }
 
-.right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.chip {
-  font-size: 12px;
-  padding: 4px 8px;
-  border: 1px solid rgba(34, 197, 94, 0.22);
-  background: rgba(2, 6, 23, 0.55);
-  border-radius: 999px;
-  color: #b7ffcd;
-  opacity: 0.92;
-}
-.time {
-  font-size: 12px;
-  opacity: 0.85;
-}
-
-/* ====== 内容区 ====== */
-.wrap {
-  width: min(720px, 100%);
-  margin: 0 auto;
-  padding: 14px 12px 22px;
+.burger {
+  width: 44px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(34,197,94,.22);
+  background: rgba(1,4,12,.55);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 12px;
+  transition: transform .18s ease;
 }
-
-.card {
-  border-radius: 18px;
-  border: 1px solid rgba(34, 197, 94, 0.20);
-  background: rgba(2, 6, 23, 0.55);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
-  overflow: hidden;
+.burger:active { transform: scale(.98); }
+.b {
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(167,255,191,.95);
 }
-
-.title {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 14px 10px;
-  border-bottom: 1px solid rgba(34, 197, 94, 0.16);
-}
-.k {
+.topTitle .t1 { font-weight: 800; letter-spacing: .6px; color: #b7ffcd; }
+.topTitle .t2 { font-size: 12px; opacity: .85; }
+.badge {
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 1px;
-  color: #a7ffbf;
+  letter-spacing: .6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(34,197,94,.25);
+  background: rgba(34,197,94,.10);
 }
-.mini {
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  background: rgba(0,0,0,.55);
+  animation: fade .18s ease;
+}
+
+.drawer {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 26;
+  width: min(320px, 84vw);
+  background: rgba(2,6,23,.92);
+  border-right: 1px solid rgba(34,197,94,.18);
+  transform: translateX(-105%);
+  transition: transform .22s cubic-bezier(.2,.9,.2,1);
+  box-shadow: 20px 0 50px rgba(0,0,0,.45);
+  display: flex;
+  flex-direction: column;
+}
+.menu-open .drawer { transform: translateX(0); }
+
+.drawerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(34,197,94,.14);
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.dot {
+  width: 10px; height: 10px; border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 18px rgba(34,197,94,.55);
+}
+.brandName { font-weight: 900; letter-spacing: .5px; }
+.brandSub { font-size: 12px; opacity: .65; }
+.x {
+  width: 38px; height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(34,197,94,.18);
+  background: rgba(1,4,12,.55);
+  color: #b7ffcd;
+  font-size: 18px;
+}
+
+.nav { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.navItem {
+  border-radius: 14px;
+  border: 1px solid rgba(34,197,94,.14);
+  background: rgba(1,4,12,.45);
+  padding: 12px 12px;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: transform .14s ease, border-color .14s ease, background .14s ease;
+}
+.navItem:active { transform: scale(.99); }
+.navItem.active {
+  border-color: rgba(34,197,94,.35);
+  background: rgba(34,197,94,.10);
+}
+.left { display: flex; align-items: center; gap: 12px; }
+.ico {
+  width: 34px; height: 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(34,197,94,.20);
+  display: grid; place-items: center;
+  background: rgba(1,4,12,.55);
+}
+.txt .name { font-weight: 800; }
+.txt .desc { font-size: 12px; opacity: .65; margin-top: 2px; }
+.chev { opacity: .55; font-size: 18px; }
+
+.drawerFoot {
+  margin-top: auto;
+  padding: 12px 14px 14px;
+  border-top: 1px solid rgba(34,197,94,.12);
+}
+
+.main {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  padding: 14px 12px 22px;
+}
+
+.hero {
+  border-radius: 18px;
+  border: 1px solid rgba(34,197,94,.18);
+  background: rgba(2,6,23,.55);
+  box-shadow: 0 12px 40px rgba(0,0,0,.45);
+  padding: 14px 14px 12px;
+}
+.heroTop { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.pill {
   font-size: 12px;
   padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(34, 197, 94, 0.25);
-  background: rgba(1, 4, 12, 0.6);
-  color: #b7ffcd;
+  border: 1px solid rgba(34,197,94,.22);
+  background: rgba(1,4,12,.45);
 }
+.h1 { margin: 0; font-size: 22px; letter-spacing: .4px; }
+.p { margin: 8px 0 0; opacity: .82; }
 
-/* ====== 终端区 ====== */
-.terminal {
-  padding: 12px 14px;
-  height: 52svh;         /* 手机看起来像 App */
-  max-height: 560px;
-  overflow: auto;
-  scroll-behavior: smooth;
-}
-
-.line {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  line-height: 1.55;
-  font-size: 13px;
-  word-break: break-word;
-}
-.prompt {
-  color: #22c55e;
-  opacity: 0.95;
-}
-.text {
-  color: #d6ffe2;
-  opacity: 0.92;
-}
-.text.typing {
-  opacity: 0.85;
-}
-.cursor {
-  color: #22c55e;
-  opacity: 0.95;
-  animation: blink 1s step-start infinite;
-}
-
-.sep {
-  margin: 12px 0;
-  border-top: 1px dashed rgba(34, 197, 94, 0.22);
-}
-
-.block {
-  margin: 10px 0 12px;
-}
-.out {
-  margin-left: 14px;
-  margin-top: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.oline {
-  display: flex;
-  gap: 8px;
-  font-size: 12.5px;
-}
-.muted {
-  color: rgba(167, 255, 191, 0.55);
-}
-
-/* ====== 输入区 ====== */
-.inputRow {
+.grid {
+  margin-top: 12px;
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-  padding: 12px 14px 10px;
-  border-top: 1px solid rgba(34, 197, 94, 0.14);
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
-
-.inWrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border-radius: 14px;
-  border: 1px solid rgba(34, 197, 94, 0.22);
-  background: rgba(1, 4, 12, 0.55);
-  padding: 10px 12px;
+.card {
+  border-radius: 18px;
+  border: 1px solid rgba(34,197,94,.16);
+  background: rgba(2,6,23,.50);
+  padding: 14px;
+  box-shadow: 0 10px 36px rgba(0,0,0,.38);
 }
+.cardTitle { font-weight: 900; letter-spacing: .6px; margin-bottom: 10px; }
 
-.input {
-  width: 100%;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: #d6ffe2;
-  font-size: 14px;
-  caret-color: #22c55e;
-}
-
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
 .btn {
   border-radius: 14px;
   padding: 10px 14px;
-  border: 1px solid rgba(34, 197, 94, 0.28);
-  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34,197,94,.28);
+  background: rgba(34,197,94,.12);
   color: #b7ffcd;
-  font-weight: 800;
-  letter-spacing: 0.6px;
+  font-weight: 900;
+  letter-spacing: .4px;
 }
+.btn.ghost {
+  background: rgba(1,4,12,.35);
+  border-color: rgba(34,197,94,.18);
+}
+.hint { margin-top: 10px; font-size: 12px; }
 
-.quick {
+.kv {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px 10px;
+  font-size: 13px;
+}
+.k { opacity: .65; }
+.v { opacity: .92; }
+.ok { color: #86efac; }
+
+.log {
+  border-radius: 14px;
+  border: 1px solid rgba(34,197,94,.14);
+  background: rgba(1,4,12,.35);
+  padding: 10px 10px;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
-  padding: 10px 14px 14px;
 }
-.q {
+.ln { font-size: 13px; display: flex; gap: 10px; }
+.tag { color: #86efac; }
+.warn { color: #fbbf24; }
+
+.tool .lab { font-size: 12px; opacity: .70; display: block; margin: 8px 0 6px; }
+.ta {
+  width: 100%;
+  min-height: 110px;
+  border-radius: 14px;
+  border: 1px solid rgba(34,197,94,.18);
+  background: rgba(1,4,12,.45);
+  color: #d6ffe2;
+  padding: 10px 12px;
+  outline: none;
+  resize: vertical;
+}
+.out {
+  border-radius: 14px;
+  border: 1px dashed rgba(34,197,94,.20);
+  background: rgba(1,4,12,.25);
+  padding: 10px 12px;
+  min-height: 44px;
+  font-size: 13px;
+  opacity: .92;
+  word-break: break-word;
+}
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
   font-size: 12px;
-  padding: 7px 10px;
+  padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(34, 197, 94, 0.22);
-  background: rgba(1, 4, 12, 0.5);
-  color: #b7ffcd;
+  border: 1px solid rgba(34,197,94,.18);
+  background: rgba(1,4,12,.35);
+  opacity: .85;
 }
-.q.danger {
-  border-color: rgba(239, 68, 68, 0.35);
-  color: rgba(255, 198, 198, 0.95);
+.about p { margin: 8px 0; opacity: .88; }
+
+.foot { text-align: center; margin-top: 14px; font-size: 12px; opacity: .7; }
+.muted { color: rgba(167,255,191,.6); }
+
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* ====== 页脚 ====== */
-.foot {
-  text-align: center;
-  padding: 6px 0 0;
-  font-size: 12px;
-  opacity: 0.75;
-}
-
-/* 霓虹增强（可切换） */
-.glow .card {
-  box-shadow:
-    0 12px 40px rgba(0,0,0,0.45),
-    0 0 0 1px rgba(34, 197, 94, 0.15),
-    0 0 24px rgba(34, 197, 94, 0.12);
-}
-.glow .terminal {
-  text-shadow: 0 0 18px rgba(34, 197, 94, 0.08);
-}
-
-@keyframes blink {
-  50% { opacity: 0.15; }
-}
-
-/* 桌面适配稍微拉宽一点 */
-@media (min-width: 768px) {
-  .terminal { height: 420px; }
-  .line { font-size: 14px; }
+@media (min-width: 860px) {
+  .grid { grid-template-columns: 1fr 1fr; }
 }
 </style>
