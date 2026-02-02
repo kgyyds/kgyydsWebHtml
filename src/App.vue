@@ -64,6 +64,7 @@ import { ref } from "vue";
   font-family: 'Arial', sans-serif;
 }
 
+/* Header Styling */
 .header {
   text-align: center;
   margin-top: 20px;
@@ -79,6 +80,7 @@ import { ref } from "vue";
   font-size: 1.2em;
 }
 
+/* Main Content Layout */
 .main-content {
   display: grid;
   grid-template-columns: 1fr; /* 默认单列 */
@@ -88,6 +90,7 @@ import { ref } from "vue";
   max-width: 1000px; /* 最大宽度限制 */
 }
 
+/* Card Styles */
 .card {
   background-color: white;
   border-radius: 15px;
@@ -174,6 +177,63 @@ import { ref } from "vue";
 @media (min-width: 769px) {
   .main-content {
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* 自适应卡片布局 */
+  }
+}
+
+/* Dark Mode Styles */
+@media (prefers-color-scheme: dark) {
+  .app {
+    background-color: #121212; /* 背景色设置为深色 */
+  }
+
+  .header {
+    color: #fff;
+  }
+
+  .title {
+    color: #fff;
+  }
+
+  .subtitle {
+    color: #bbb;
+  }
+
+  .main-content {
+    background-color: #181818; /* 主体内容背景色 */
+  }
+
+  .card {
+    background-color: #1e1e1e;
+    border-color: #333;
+  }
+
+  .card-header {
+    background-color: #0077b6; /* 卡片头部背景色 */
+  }
+
+  .card-title {
+    color: #fff;
+  }
+
+  .card-description {
+    color: #aaa;
+  }
+
+  .card-body {
+    color: #ddd;
+  }
+
+  .card-footer {
+    background-color: #2a2a2a;
+  }
+
+  .card-btn {
+    background-color: #0077b6;
+    color: #fff;
+  }
+
+  .card-btn:hover {
+    background-color: #005f89;
   }
 }
 </style>
