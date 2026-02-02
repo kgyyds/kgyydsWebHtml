@@ -1,47 +1,74 @@
 <template>
   <div class="app">
     <header class="header">
-      <h1 class="title">Vue3 Card Layout</h1>
-      <p class="subtitle">仿Kotlin Compose卡片布局</p>
+      <h1 class="title">KPT00L // NFC</h1>
+      <p class="subtitle">READ | WRITE | KEYS | PROFILES</p>
     </header>
 
     <main class="main-content">
+      <!-- NFC/Offline Card -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">Card 1</h2>
-          <p class="card-description">This is a simple card that holds content.</p>
+          <h2 class="card-title">NFC//OFFLINE</h2>
+          <p class="card-description">等待授权</p>
         </div>
         <div class="card-body">
-          <p class="card-text">Here’s some text inside the card. You can add images, buttons, or any content.</p>
-        </div>
-        <div class="card-footer">
-          <button class="card-btn">Action</button>
+          <button class="btn enable-btn">ENABLE</button>
         </div>
       </div>
 
+      <!-- Read/Dump Card -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">Card 2</h2>
-          <p class="card-description">Another card with different content.</p>
+          <h2 class="card-title">READ//DUMP</h2>
+          <p class="card-description">读取 NFC 标签数据（房区/块）</p>
         </div>
         <div class="card-body">
-          <p class="card-text">Add whatever you like to make the card more interactive!</p>
-        </div>
-        <div class="card-footer">
-          <button class="card-btn">Action</button>
+          <button class="btn">Read NFC</button>
         </div>
       </div>
 
+      <!-- Write/Flash Card -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">Card 3</h2>
-          <p class="card-description">This card could be used for additional content.</p>
+          <h2 class="card-title">WRITE//FLASH</h2>
+          <p class="card-description">写入数据到 NFC 标签（支持配置库）</p>
         </div>
         <div class="card-body">
-          <p class="card-text">Each card can have its own unique content and style.</p>
+          <button class="btn">Write NFC</button>
         </div>
-        <div class="card-footer">
-          <button class="card-btn">Action</button>
+      </div>
+
+      <!-- Settings/Keys Card -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">SETTINGS//KEYS</h2>
+          <p class="card-description">管理密钥集（KeyA/KeyB）</p>
+        </div>
+        <div class="card-body">
+          <button class="btn">Manage Keys</button>
+        </div>
+      </div>
+
+      <!-- About/Author Card -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">ABOUT//AUTHOR</h2>
+          <p class="card-description">关于作者 / 项目信息</p>
+        </div>
+        <div class="card-body">
+          <button class="btn">About</button>
+        </div>
+      </div>
+
+      <!-- Test/Toast Card -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">TEST//TOAST</h2>
+          <p class="card-description">点击弹出 Toast</p>
+        </div>
+        <div class="card-body">
+          <button class="btn">Test Toast</button>
         </div>
       </div>
     </main>
@@ -49,9 +76,13 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref } from 'vue';
 
-// You can define more logic here if needed
+const enableNfc = ref(false);
+
+const toggleNfc = () => {
+  enableNfc.value = !enableNfc.value;
+};
 </script>
 
 <style scoped>
@@ -60,11 +91,12 @@ import { ref } from "vue";
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  background-color: #f4f4f4;
+  background-color: #121212; /* Dark background */
   font-family: 'Arial', sans-serif;
+  color: #d6ffe2;
 }
 
-/* Header Styling */
+/* Header */
 .header {
   text-align: center;
   margin-top: 20px;
@@ -72,29 +104,29 @@ import { ref } from "vue";
 
 .title {
   font-size: 2em;
-  color: #333;
+  color: #22c55e; /* Green for header */
 }
 
 .subtitle {
-  color: #666;
+  color: #a3b7b1; /* Muted green */
   font-size: 1.2em;
 }
 
 /* Main Content Layout */
 .main-content {
   display: grid;
-  grid-template-columns: 1fr; /* 默认单列 */
+  grid-template-columns: 1fr;
   gap: 20px;
   padding: 20px;
   width: 100%;
-  max-width: 1000px; /* 最大宽度限制 */
+  max-width: 900px;
 }
 
 /* Card Styles */
 .card {
-  background-color: white;
+  background-color: #1e1e1e;
   border-radius: 15px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   transition: transform 0.3s ease-in-out;
 }
@@ -104,9 +136,9 @@ import { ref } from "vue";
 }
 
 .card-header {
-  background-color: #3498db;
+  background-color: #0077b6; /* Blue header background */
   padding: 20px;
-  color: white;
+  color: #fff;
   text-align: center;
 }
 
@@ -124,116 +156,39 @@ import { ref } from "vue";
   padding: 20px;
 }
 
-.card-text {
-  font-size: 1.1em;
-  color: #333;
-}
-
-.card-footer {
-  text-align: center;
-  padding: 15px;
-  background-color: #f0f0f0;
-}
-
 .card-btn {
-  background-color: #3498db;
+  background-color: #22c55e; /* Green button */
   color: white;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border: none;
-  border-radius: 5px;
-  cursor: pointer;
+  border-radius: 10px;
   font-size: 1.1em;
-  transition: background-color 0.3s;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .card-btn:hover {
-  background-color: #2980b9;
+  background-color: #16a34a;
 }
 
-/* 移动端优化 */
+/* Enable Button Styling */
+.enable-btn {
+  background-color: #ff6f61; /* Red for enable button */
+  color: white;
+}
+
+.enable-btn:hover {
+  background-color: #e55347;
+}
+
+/* Mobile responsiveness */
 @media (max-width: 768px) {
   .main-content {
-    grid-template-columns: 1fr; /* 在小屏幕上保持单列布局 */
+    grid-template-columns: 1fr; /* Single column layout */
   }
 
   .card {
-    margin: 0 10px; /* 为卡片添加边距，避免贴边显示 */
-  }
-
-  .card-header {
-    font-size: 1.2em; /* 调整标题大小 */
-  }
-
-  .card-body {
-    padding: 15px; /* 在小屏幕上减少卡片内部的填充 */
-  }
-
-  .card-btn {
-    padding: 8px 16px; /* 按钮在小屏幕上稍微缩小 */
-  }
-}
-
-/* 平板及更大屏幕设备优化 */
-@media (min-width: 769px) {
-  .main-content {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* 自适应卡片布局 */
-  }
-}
-
-/* Dark Mode Styles */
-@media (prefers-color-scheme: dark) {
-  .app {
-    background-color: #121212; /* 背景色设置为深色 */
-  }
-
-  .header {
-    color: #fff;
-  }
-
-  .title {
-    color: #fff;
-  }
-
-  .subtitle {
-    color: #bbb;
-  }
-
-  .main-content {
-    background-color: #181818; /* 主体内容背景色 */
-  }
-
-  .card {
-    background-color: #1e1e1e;
-    border-color: #333;
-  }
-
-  .card-header {
-    background-color: #0077b6; /* 卡片头部背景色 */
-  }
-
-  .card-title {
-    color: #fff;
-  }
-
-  .card-description {
-    color: #aaa;
-  }
-
-  .card-body {
-    color: #ddd;
-  }
-
-  .card-footer {
-    background-color: #2a2a2a;
-  }
-
-  .card-btn {
-    background-color: #0077b6;
-    color: #fff;
-  }
-
-  .card-btn:hover {
-    background-color: #005f89;
+    margin: 0 10px; /* Add margin on mobile */
   }
 }
 </style>
